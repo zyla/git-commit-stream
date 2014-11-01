@@ -60,6 +60,16 @@ describe('CommitStream', function() {
       });
     });
   });
+
+  specify('should detect refs from info/refs after gc', function() {
+    return openRepo(repoWithCommit).then(function(cs) {
+      return exec("cd " + repoPath + " && git gc").then(function() {
+        return cs.getState().then(function(state) {
+          assert(state['refs/heads/master']);
+        });
+      });
+    });
+  });
 });
 
 function freshRepo(path) {
