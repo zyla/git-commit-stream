@@ -108,6 +108,36 @@ describe('CommitStream', function() {
       exec("cd " + repoPath + " && git reset --hard HEAD~2");
     });
   });
+
+  specify('should detect amend', function(done) {
+    openRepo(repoWithCommit).then(function(cs) {
+      var newCommits = null, deletedCommits = null;
+
+      cs.on('newCommits', function(refname, commits) {
+        assert(refname == 'refs/heads/master');
+        newCommits = commits;
+        check();
+      });
+
+      cs.on('deletedCommits', function(refname, commits) {
+        assert(refname == 'refs/heads/master');
+        deletedCommits = commits;
+        check();
+      });
+
+      function check() {
+        if(newCommits && deletedCommits) {
+          assert(newCommits.length == 1);
+          assert(deletedCommits.length == 1);
+          assert(newCommits[0].message().trim() == 'amended');
+          assert(deletedCommits[0].message().trim() == 'Initial commit');
+          done();
+        }
+      }
+
+      exec("cd " + repoPath + " && git commit --allow-empty --amend -m amended");
+    });
+  });
 });
 
 function freshRepo(path) {
