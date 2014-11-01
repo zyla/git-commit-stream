@@ -78,6 +78,36 @@ describe('CommitStream', function() {
       });
     });
   });
+
+  specify('should detect new commits', function(done) {
+    openRepo(repoWithTestBranch).then(function(cs) {
+      cs.on('newCommits', function(refname, commits) {
+        assert(refname == 'refs/heads/test');
+        assert(commits.length == 2);
+        assert(commits[0].message().trim() == 'test 1');
+        assert(commits[1].message().trim() == 'test 2');
+        done();
+      });
+
+      exec("cd " + repoPath + " && git update-ref refs/heads/test master");
+    });
+  });
+
+  specify('should detect deleted commits', function(done) {
+    openRepo(repoWithTestBranch).then(function(cs) {
+      var masterSha = cs.state['refs/heads/master'];
+
+      cs.on('deletedCommits', function(refname, commits) {
+        assert(refname == 'refs/heads/master');
+        assert(commits.length == 2);
+        assert(commits[0].message().trim() == 'test 2');
+        assert(commits[1].message().trim() == 'test 1');
+        done();
+      });
+
+      exec("cd " + repoPath + " && git reset --hard HEAD~2");
+    });
+  });
 });
 
 function freshRepo(path) {
@@ -91,6 +121,16 @@ function makeCommit(path, msg) {
 function repoWithCommit(path) {
   return freshRepo(path).then(function() {
     return makeCommit(path, 'Initial commit');
+  });
+}
+
+function repoWithTestBranch(path) {
+  return repoWithCommit(path).then(function() {
+    return exec('cd ' + path + ' && git branch test');
+  }).then(function() {
+    return makeCommit(path, 'test 1');
+  }).then(function() {
+    return makeCommit(path, 'test 2');
   });
 }
 
