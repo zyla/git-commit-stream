@@ -1,9 +1,16 @@
 promisify = require 'promisify-node'
 mkdirp = promisify 'mkdirp'
-exec = promisify 'child_process' .exec
+Promise = require 'promise'
+child_process = require('child_process')
+
+exec = (cmd) ->
+  return new Promise (fulfil, reject) ->
+    child_process.exec cmd, (err, stdout, stderr) ->
+      if err
+        reject(err)
+      else
+        fulfil(stdout)
 
 before ->
-  mkdirp 'test/repos'
-    .then -> exec 'git init --template=test/template test/repos/repo'
-    .then -> exec 'cd test/repos/repo && git commit --allow-empty -m "Initial commit"'
-    .then -> exec 'git init test/repos/no-head'
+  exec 'rm -rf test/repos'
+    .then -> mkdirp 'test/repos'
