@@ -5,7 +5,7 @@ var CommitStream = require('../lib/index').CommitStream;
 var ZERO_SHA = '0000000000000000000000000000000000000000';
 
 CommitStream.open(process.argv[2] || '.').then(function(stream) {
-	console.log('Watching repository');
+	console.log('Watching repository ' + stream.gitDir);
 	stream.on('refChanged', function(refname, oldSha, newSha) {
 		console.log(refname + ': ' + (oldSha || ZERO_SHA) +
         ' -> ' + (newSha || ZERO_SHA));
