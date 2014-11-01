@@ -6,8 +6,21 @@ var ZERO_SHA = '0000000000000000000000000000000000000000';
 
 CommitStream.open(process.argv[2] || '.').then(function(stream) {
 	console.log('Watching repository ' + stream.gitDir);
-	stream.on('refChanged', function(refname, oldSha, newSha) {
-		console.log(refname + ': ' + (oldSha || ZERO_SHA) +
-        ' -> ' + (newSha || ZERO_SHA));
-	});
+  stream.on('newCommits', function(refname, commits) {
+    commits.forEach(function(commit) {
+      logCommit('new', refname, commit);
+    });
+  });
+  stream.on('deletedCommits', function(refname, commits) {
+    commits.forEach(function(commit) {
+      logCommit('deleted', refname, commit);
+    });
+  });
 }).done();
+
+function logCommit(tag, refname, commit) {
+  console.log('[' + tag + '] ' +
+    refname + ' ' +
+    commit.id().toString().substring(0, 8) + ' ' +
+    commit.message().split('\n')[0]);
+}
