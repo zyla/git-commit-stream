@@ -1,18 +1,18 @@
-watch = require 'node-watch'
 path = require 'path'
 { EventEmitter } = require 'events'
 { Repository } = require 'nodegit'
 Promise = require 'promise'
-{ map, pairs-to-obj, obj-to-pairs } = require 'prelude-ls'
+{ map, pairs-to-obj, obj-to-pairs, id } = require 'prelude-ls'
 promisify = require 'promisify-node'
 fs = promisify 'fs'
+rawFS = require('fs')
 
 
 class CommitStream extends EventEmitter
   (repo, git-dir) ~>
     @repository = repo
     @git-dir = git-dir
-    @_createWatcher()
+    @_createWatchers()
 
   getRefNames: ->
     # FIXME get actual ref names
@@ -26,13 +26,22 @@ class CommitStream extends EventEmitter
       .then Promise.all
       .then pairs-to-obj
 
-  _createWatcher: ->
-    paths = [ 'refs', 'info/refs', 'HEAD' ]
+  _createWatchers: ->
+    paths = [ 'refs/heads', 'info', '.' ]
       |> map (p) ~> path.join(@git-dir, p)
+
+    @watchers = []
+
+    onChange = @_onChange.bind(this)
 
     @getState().then (state) ~>
       @state = state
-      watch(paths, @_onChange.bind(this))
+      Promise.all(paths.map (path) ->
+        fs.stat(path).then (stat) ->
+          rawFS.watch(path, onChange)
+        .catch -> return null
+      ).then (watchers) ~>
+        @watchers = watchers.filter(id)
     .done()
 
   _onChange: (filename) ->
@@ -42,6 +51,7 @@ class CommitStream extends EventEmitter
 
   _stateChanged: (newState) ~>
     oldState = @state
+    @state = newState
     obj-to-pairs(newState).forEach ([refname, newSha]) ~>
       if oldState[refname] !~= newSha
         @emit('refChanged', refname, oldState[refname], newSha)
@@ -50,6 +60,9 @@ class CommitStream extends EventEmitter
     obj-to-pairs(oldState).forEach ([refname, oldSha]) ~>
       if !newState[refname] and oldSha
         @emit('refChanged', refname, oldSha, null)
+
+  close: ->
+    @watchers.forEach (.close())
 
 get-git-dir = (directory) ->
   Promise.resolve path.join(directory, '.git')

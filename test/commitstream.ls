@@ -11,6 +11,9 @@ describe 'CommitStream', ->
     CommitStream.open(repoPath).then (cs) ~>
       @cs = cs
 
+  after ->
+    @cs.close()
+
   specify 'should open a repo', ->
     assert(@cs instanceof CommitStream)
 
