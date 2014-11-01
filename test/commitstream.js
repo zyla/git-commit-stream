@@ -4,6 +4,7 @@ var path = require('path');
 var promisify = require('promisify-node');
 var Promise = require('promise');
 var exec = require('../lib/util').execP;
+var mkdirp = promisify('mkdirp');
 
 var repoPath = path.resolve('test/repos/repo');
 
@@ -17,13 +18,16 @@ describe('CommitStream', function() {
 
   specify('should get repo state', function() {
     return openRepo(repoWithCommit).then(function(cs) {
-      return cs.getState().then(function(state) {
-        return assert(state['refs/heads/master']);
+      exec("cd " + repoPath + " && git branch test").then(function() {
+        return cs.getState().then(function(state) {
+          assert(state['refs/heads/master']);
+          assert(state['refs/heads/test']);
+        });
       });
     });
   });
 
-  return specify('should notice that a ref changed', function(done) {
+  specify('should notice that a ref changed', function(done) {
     return openRepo(repoWithCommit).then(function(cs) {
       cs.on('refChanged', function(refname, oldsha, newsha) {
         assert(refname === 'refs/heads/master');
@@ -31,6 +35,21 @@ describe('CommitStream', function() {
       });
 
       exec("cd " + repoPath + " && git commit --allow-empty -m 'test'");
+    });
+  });
+
+  specify('should notice ref creation', function(done) {
+    openRepo(repoWithCommit).then(function(cs) {
+      var masterSha = cs.state['refs/heads/master'];
+
+      cs.on('refChanged', function(refname, oldsha, newsha) {
+        assert(refname === 'refs/heads/test');
+        assert(!oldsha);
+        assert(newsha == masterSha);
+        done();
+      });
+
+      exec("cd " + repoPath + " && git branch test");
     });
   });
 });
@@ -49,14 +68,26 @@ function repoWithCommit(path) {
   });
 }
 
+var openedRepos = [];
+
+afterEach(function() {
+  openedRepos.forEach(function(cs) {
+    cs.close();
+  });
+  openedRepos = [];
+});
+
 function openRepo(createFunc) {
-  return createFunc(repoPath).then(function() {
-    return CommitStream.open(repoPath).then(function(cs) {
-      after(function() {
-        return cs.close();
-      });
+  return mkdirp('test/repos')
+    .then(function() {
+      return exec('rm -rf ' + repoPath);
+    }).then(function() {
+      return createFunc(repoPath);
+    }).then(function() {
+      return CommitStream.open(repoPath);
+    }).then(function(cs) {
+      openedRepos.push(cs);
       return cs;
     });
-  });
 }
 
