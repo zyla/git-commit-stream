@@ -18,7 +18,7 @@ describe('CommitStream', function() {
 
   specify('should get repo state', function() {
     return openRepo(repoWithCommit).then(function(cs) {
-      exec("cd " + repoPath + " && git branch test").then(function() {
+      return exec("cd " + repoPath + " && git branch test").then(function() {
         return cs.getState().then(function(state) {
           assert(state['refs/heads/master']);
           assert(state['refs/heads/test']);
@@ -28,7 +28,7 @@ describe('CommitStream', function() {
   });
 
   specify('should notice that a ref changed', function(done) {
-    return openRepo(repoWithCommit).then(function(cs) {
+    openRepo(repoWithCommit).then(function(cs) {
       cs.on('refChanged', function(refname, oldsha, newsha) {
         assert(refname === 'refs/heads/master');
         return done();
