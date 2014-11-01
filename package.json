@@ -19,10 +19,10 @@
     "mocha": "^1.21.4"
   },
   "dependencies": {
+    "node-watch": "^0.3.4",
     "nodegit": "git://github.com/nodegit/nodegit",
     "prelude-ls": "^1.1.1",
     "promise": "^6.0.0",
-    "promisify-node": "^0.1.2",
-    "watch": "^0.11.0"
+    "promisify-node": "^0.1.2"
   }
 }

@@ -17,3 +17,11 @@ describe 'CommitStream', ->
   specify 'should get repo state', ->
     state <- @cs.getState().then
     assert(state['refs/heads/master'])
+
+  specify 'should notice that a ref changed', (done) ->
+    @cs.on 'refChanged', (refname, oldsha, newsha) ->
+      assert(refname == 'refs/heads/master')
+      done()
+
+    exec("cd #{repoPath} && git commit --allow-empty -m 'test'")
+    return
