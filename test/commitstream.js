@@ -61,6 +61,14 @@ describe('CommitStream', function() {
     });
   });
 
+  specify('should open bare repo', function() {
+    return openRepo(bareRepo).then(function(cs) {
+      return cs.getState().then(function(state) {
+        assert(Object.keys(state).length === 0);
+      });
+    });
+  });
+
   specify('should detect refs from info/refs after gc', function() {
     return openRepo(repoWithCommit).then(function(cs) {
       return exec("cd " + repoPath + " && git gc").then(function() {
@@ -84,6 +92,10 @@ function repoWithCommit(path) {
   return freshRepo(path).then(function() {
     return makeCommit(path, 'Initial commit');
   });
+}
+
+function bareRepo(path) {
+  return exec("git --bare init --template=test/template " + path);
 }
 
 var openedRepos = [];
