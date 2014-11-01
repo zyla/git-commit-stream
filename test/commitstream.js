@@ -52,6 +52,14 @@ describe('CommitStream', function() {
       exec("cd " + repoPath + " && git branch test");
     });
   });
+
+  specify('should work with fresh repo', function() {
+    return openRepo(freshRepo).then(function(cs) {
+      return cs.getState().then(function(state) {
+        assert(Object.keys(state).length === 0);
+      });
+    });
+  });
 });
 
 function freshRepo(path) {
