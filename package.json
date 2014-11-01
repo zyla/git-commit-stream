@@ -1,12 +1,13 @@
 {
   "name": "git-commit-stream",
-  "version": "0.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "Watch for new commits in a Git repo",
+  "repository": "git://github.com/zyla/git-commit-stream",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
   },
-  "author": "",
+  "author": "Maciej Bielecki <zyla@prati.pl>",
   "license": "ISC",
   "devDependencies": {
     "better-assert": "^1.0.1",
